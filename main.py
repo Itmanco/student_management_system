@@ -1,0 +1,140 @@
+import sys
+from dbHelper import DbHelper
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QVBoxLayout, QLabel, QWidget, QGridLayout, QLineEdit, \
+    QPushButton, QComboBox, QMainWindow, QTableWidget, QTableWidgetItem, QDialog
+from PyQt6.QtGui import QAction
+
+dbname = "database.db"
+
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Student Management System")
+        self.setFixedWidth(600)
+        self.setFixedHeight(500)
+
+        file_menu_items = self.menuBar().addMenu("&File")
+        add_student_action = QAction("Add Student", self)
+        add_student_action.triggered.connect(self.insert)
+        file_menu_items.addAction(add_student_action)
+
+        help_menu_items = self.menuBar().addMenu("&Help")
+        about_action = QAction("About", self)
+        help_menu_items.addAction(about_action)
+        # the next line should be used just in case the menu item doesn't show up
+        # about_action.setMenuRole(QAction.MenuRole.NoRole)
+
+        edit_menu_items = self.menuBar().addMenu("&Edit")
+        search_student_action = QAction("Edit Student Information", self)
+        search_student_action.triggered.connect(self.search)
+        edit_menu_items.addAction(search_student_action)
+
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(("Id", "Name", "Course", "Mobile"))
+        self.table.verticalHeader().setVisible(False)
+        self.setCentralWidget(self.table)
+        self.load_table()
+
+    def load_table(self):
+        dbmanager = DbHelper(dbname)
+        results = dbmanager.query_all("students")
+        self.table.setRowCount(0)
+        for row_number, row_data in enumerate(results):
+            self.table.insertRow(row_number)
+            for column_number, data in enumerate(row_data):
+                self.table.setItem(row_number, column_number, QTableWidgetItem(str(data)))
+        dbmanager.connection.close()
+
+    def insert(self):
+        dialog = InsertDialog()
+        dialog.exec()
+
+    def search(self):
+        dialog = SearchDialog()
+        dialog.exec()
+
+
+class SearchDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Search Student Data")
+        self.setFixedWidth(300)
+        self.setFixedHeight(300)
+
+        layout = QVBoxLayout()
+
+        # search by student name
+        self.student_name = QLineEdit()
+        self.student_name.setPlaceholderText("Name")
+        layout.addWidget(self.student_name)
+
+
+        # Add search button
+        button = QPushButton("Search")
+        button.clicked.connect(self.search_student)
+        layout.addWidget(button)
+
+        self.setLayout(layout)
+
+    def search_student(self):
+        dbmanager = DbHelper(dbname)
+        name = self.student_name.text()
+
+        results = dbmanager.query_with_condition("Students", f"name = '{name}'")
+        rows = list(results)
+        students_manager.table.clearSelection()
+        items = students_manager.table.findItems(name, Qt.MatchFlag.MatchFixedString)
+        for item in items:
+            print(item)
+            students_manager.table.item(item.row(), 1).setSelected(True)
+        dbmanager.connection.close()
+
+
+class InsertDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Insert Student Data")
+        self.setFixedWidth(300)
+        self.setFixedHeight(300)
+
+        layout = QVBoxLayout()
+
+        # Add student name widget
+        self.student_name = QLineEdit()
+        self.student_name.setPlaceholderText("Name")
+        layout.addWidget(self.student_name)
+
+        # Add combo box of courses
+        self.course_name = QComboBox()
+        courses = ["Biology", "Math", "Astronomy", "Physics"]
+        self.course_name.addItems(courses)
+        layout.addWidget(self.course_name)
+
+        # Add mobile widget
+        self.mobile = QLineEdit()
+        self.mobile.setPlaceholderText("Mobile")
+        layout.addWidget(self.mobile)
+
+        # Add submit button
+        button = QPushButton("Submit")
+        button.clicked.connect(self.add_student)
+        layout.addWidget(button)
+
+        self.setLayout(layout)
+
+    def add_student(self):
+        dbmanager = DbHelper(dbname)
+        name = self.student_name.text()
+        course = self.course_name.itemText(self.course_name.currentIndex())
+        mobile = self.mobile.text()
+        results = dbmanager.insert_sigle("students", [("name", name), ("course", course), ("mobile", mobile)])
+        students_manager.load_table()
+
+
+app = QApplication(sys.argv)
+students_manager = MainWindow()
+students_manager.show()
+sys.exit(app.exec())
