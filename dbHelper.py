@@ -1,11 +1,24 @@
 import sqlite3
+import mysql.connector
 
 
 class DbHelper:
-    def __init__(self, database_path):
-        # Establish a connection and a cursor
-        self.connection = sqlite3.connect(database_path)
-        self.cursor = self.connection.cursor()
+    def __init__(self, database_path, dbtype, parameters = None):
+
+        if dbtype == "sqlite":
+            # Establish a connection and a cursor
+            self.connection = sqlite3.connect(database_path)
+            self.cursor = self.connection.cursor()
+        else:
+            self.host = parameters[0][1]
+            self.user = parameters[1][1]
+            self.password = parameters[2][1]
+            self.database = parameters[3][1]
+
+            # Establish a connection and a cursor
+            self.connection = mysql.connector.connect(host=self.host, user=self.user, password=self.password,
+                                                      database=self.database)
+            self.cursor = self.connection.cursor()
 
     def query_all(self, table_name):
         """
@@ -81,9 +94,9 @@ class DbHelper:
         for item in row:
             if first_time:
                 first_time = False
-                script = script + f"'{item[0]}'"
+                script = script + f"{item[0]}"
             else:
-                script = script + f",'{item[0]}'"
+                script = script + f",{item[0]}"
         script = script+") VALUES ("
 
         first_time = True

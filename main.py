@@ -6,6 +6,9 @@ from PyQt6.QtWidgets import QApplication, QVBoxLayout, QLabel, QMessageBox, QGri
 from PyQt6.QtGui import QAction, QIcon
 
 dbname = "database.db"
+# bdtype maybe mysql or sqlite
+dbtype = "mysql"
+dbparameters = [("host", "localhost"), ("user", "root"), ("password", "pythoncourse"), ("database", "school")]
 
 
 class MainWindow(QMainWindow):
@@ -53,7 +56,8 @@ class MainWindow(QMainWindow):
         self.load_table()
 
     def load_table(self):
-        dbmanager = DbHelper(dbname)
+        dbmanager = DbHelper(dbname, dbtype, dbparameters)
+
         results = dbmanager.query_all("students")
         self.table.setRowCount(0)
         for row_number, row_data in enumerate(results):
@@ -96,6 +100,7 @@ class MainWindow(QMainWindow):
 
         self.statusbar.addWidget(edit_button)
         self.statusbar.addWidget(delete_button)
+
 
 class AboutDialog(QMessageBox):
     def __init__(self):
@@ -152,7 +157,8 @@ class EditDialog(QDialog):
         self.setLayout(layout)
 
     def update_student(self):
-        dbmanager = DbHelper(dbname)
+        dbmanager = DbHelper(dbname, dbtype, dbparameters)
+
         name = self.student_name.text()
         course = self.course_name.itemText(self.course_name.currentIndex())
         mobile = self.mobile.text()
@@ -185,7 +191,7 @@ class DeleteDialog(QDialog):
         self.setLayout(layout)
 
     def delete_student(self):
-        dbmanager = DbHelper(dbname)
+        dbmanager = DbHelper(dbname, dbtype, dbparameters)
         id = self.student_id
         results = dbmanager.delete_rows("students", [("id", id)])
         dbmanager.connection.close()
@@ -221,7 +227,7 @@ class SearchDialog(QDialog):
         self.setLayout(layout)
 
     def search_student(self):
-        dbmanager = DbHelper(dbname)
+        dbmanager = DbHelper(dbname, dbtype, dbparameters)
         name = self.student_name.text()
 
         results = dbmanager.query_with_condition("Students", f"name = '{name}'")
@@ -267,7 +273,7 @@ class InsertDialog(QDialog):
         self.setLayout(layout)
 
     def add_student(self):
-        dbmanager = DbHelper(dbname)
+        dbmanager = DbHelper(dbname, dbtype, dbparameters)
         name = self.student_name.text()
         course = self.course_name.itemText(self.course_name.currentIndex())
         mobile = self.mobile.text()
