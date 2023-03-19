@@ -7,7 +7,6 @@ class DbHelper:
         self.connection = sqlite3.connect(database_path)
         self.cursor = self.connection.cursor()
 
-
     def query_all(self, table_name):
         """
         select all data in the table
@@ -64,16 +63,18 @@ class DbHelper:
         self.cursor.execute(script)
         self.connection.commit()
 
-
     def query_with_condition(self, table_name, condition):
         # Query all data
         self.cursor.execute(f"select * from {table_name} WHERE {condition}")
         return self.cursor.fetchall()
 
-
-    #"cursor.execute("INSERT INTO students (name, course, mobile) VALUES (?, ?, ?)",name_arg, course_arg, mobile_arg)"
-    def insert_sigle(self, table_name, row):
-
+    def insert_single(self, table_name, row):
+        """
+        #"cursor.execute("INSERT INTO students (name, course, mobile) VALUES (?, ?, ?)",name_arg, course_arg, mobile_arg)"
+        :param table_name:
+        :param row:
+        :return:
+        """
         script = f"INSERT INTO {table_name} ("
 
         first_time = True
@@ -97,6 +98,52 @@ class DbHelper:
         self.connection.commit()
         return 0
 
+    def update_single(self, table_name, row, conditions):
+        """
+
+        :param table_name:
+        :param row:
+        :param conditions:
+        :return:
+        """
+        first_time = True
+        for item in row:
+            if first_time:
+                first_time = False
+                script = f"UPDATE {table_name} SET {item[0]} = '{item[1]}'"
+            else:
+                script = script + f", {item[0]} = '{item[1]}'"
+
+        first_time = True
+        for item in conditions:
+            if first_time:
+                first_time = False
+                script = script + f" WHERE {item[0]} = '{item[1]}'"
+            else:
+                script = script + f", {item[0]} = '{item[1]}'"
+
+        self.cursor.execute(script)
+        self.connection.commit()
+        return 0
+
+    def delete_rows(self, table_name, conditions):
+        """
+        DELETE from table_name WHERE condition[0] = 'condition[1]'
+        :param table_name:
+        :param conditions: list of tuples (item[0] = column name, item[1] = condition value
+        :return:
+        """
+        first_time = True
+        for item in conditions:
+            if first_time:
+                first_time = False
+                script = f"DELETE from {table_name} where {item[0]} = '{item[1]}'"
+            else:
+                script = script + f", {item[0]} = '{item[1]}'"
+
+        self.cursor.execute(script)
+        self.connection.commit()
+        return 0
 
     def insert_many_rows(self, table_name, rows):
         self.cursor.executemany(f"INSERT INTO {table_name} VALUES (?,?,?)", rows)
